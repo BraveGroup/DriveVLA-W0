@@ -1,0 +1,5 @@
+export NUPLAN_MAP_VERSION="nuplan-maps-v1.0"
+export NUPLAN_MAPS_ROOT="/mnt/nvme0n1p1/bing.zhan/repo/OmniSim/data/navsim/maps"
+export NAVSIM_EXP_ROOT="/mnt/nvme0n1p1/bing.zhan/repo/OmniSim/data/navsim/exp"
+export NAVSIM_DEVKIT_ROOT="/mnt/nvme0n1p1/bing.zhan/repo/OmniSim/inference/navsim/navsim"
+export OPENSCENE_DATA_ROOT="/mnt/nvme0n1p1/bing.zhan/repo/OmniSim/data/navsim"

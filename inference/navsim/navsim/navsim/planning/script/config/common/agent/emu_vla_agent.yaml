@@ -1,0 +1,9 @@
+_target_: navsim.agents.emu_vla_agent.EmuVLAAgent
+_convert_: 'all'
+
+trajectory_sampling:
+  _target_: nuplan.planning.simulation.trajectory.trajectory_sampling.TrajectorySampling
+  _convert_: 'all'
+  time_horizon: 4
+  interval_length: 0.5
+experiment_path: null
