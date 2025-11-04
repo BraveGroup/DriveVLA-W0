@@ -45,7 +45,7 @@ bash inference/vla/run_emu_vla_navsim_metric_others.sh
 
 # 🏆 NAVSIM v1/v2 Benchmark SOTA
 
-Here is a comparison with state-of-the-art methods on the NAVSIM test set, as presented in the paper. [cite_start]Our model, **DriveVLA-W0**, establishes a new state-of-the-art, notably using only a single front-view camera[cite: 286, 287].
+Here is a comparison with state-of-the-art methods on the NAVSIM test set, as presented in the paper. Our model, **DriveVLA-W0**, establishes a new state-of-the-art.
 
 | Method | Reference | Sensors | NC ↑ | DAC ↑ | TTC ↑ | C. ↑ | EP ↑ | PDMS ↑ |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
