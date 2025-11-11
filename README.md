@@ -1,7 +1,5 @@
 # DriveVLA-W0: World Models Amplify Data Scaling Law in Autonomous Driving
-[![arXiv](https://img.shields.io/badge/arXiv-2510.12796-df2a2a.svg?style=for-the-badge)]([http://arxiv.org/abs/2510.12796](http://arxiv.org/abs/2510.12796))
-[![HF Models](https://img.shields.io/badge/%F0%9F%A4%97-Models-yellow?style=for-the-badge)]([https://huggingface.co/liyingyan/DriveVLA-W0](https://huggingface.co/liyingyan/DriveVLA-W0))
-
+> 📜 [[Arxiv](http://arxiv.org/abs/2510.12796)] 🤗 [[Model Weights](https://huggingface.co/liyingyan/DriveVLA-W0)]
 
 Yingyan Li*, Shuyao Shang*, Weisong Liu*, Bing Zhan*, Haochen Wang*, Yuqi Wang, Yuntao Chen, Xiaoman Wang, Yasong An, Chufeng Tang, Lu Hou, Lue Fan†, Zhaoxiang Zhang†
 
