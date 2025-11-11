@@ -1,7 +1,11 @@
 # DriveVLA-W0: World Models Amplify Data Scaling Law in Autonomous Driving
+[![arXiv](https://img.shields.io/badge/arXiv-2510.12796-df2a2a.svg?style=for-the-badge)]([http://arxiv.org/abs/2510.12796](http://arxiv.org/abs/2510.12796))
+[![HF Models](https://img.shields.io/badge/%F0%9F%A4%97-Models-yellow?style=for-the-badge)]([https://huggingface.co/liyingyan/DriveVLA-W0](https://huggingface.co/liyingyan/DriveVLA-W0))
+
+
 Yingyan Li*, Shuyao Shang*, Weisong Liu*, Bing Zhan*, Haochen Wang*, Yuqi Wang, Yuntao Chen, Xiaoman Wang, Yasong An, Chufeng Tang, Lu Hou, Lue Fan†, Zhaoxiang Zhang†
 
-This Paper presents **DriveVLA-W0** [[📄 Paper (arXiv)]](http://arxiv.org/abs/2510.12796), a training paradigm that employs world modeling to predict future images. This task generates a dense, self-supervised signal that compels the model to learn the underlying dynamics of the driving environment, remedying the "supervision deficit" in VLA models and amplifying data scaling laws.
+This Paper presents **DriveVLA-W0**, a training paradigm that employs world modeling to predict future images. This task generates a dense, self-supervised signal that compels the model to learn the underlying dynamics of the driving environment, remedying the "supervision deficit" in VLA models and amplifying data scaling laws.
 
 <p align="center">
   <img src="assets/fig1.png" alt="DriveVLA-W0" width="1000"/>
@@ -33,12 +37,15 @@ pip install tensorboard==2.14.0
 pip install wandb
 ```
 
-### testing
-First, inference to get the action json file as follow.
+### Testing
+
+First, please download the checkpoints from [Hugging Face](https://huggingface.co/liyingyan/DriveVLA-W0). 
+
+Then, run the corresponding testing script to get output actions as json files
 ```
 bash inference/vla/infer_navsim_with_previous_action_last_vava.sh
 ```
-Then, run the evaluation script to get the metrics.(using the navsim conda env)
+Finally, run the following script to compute PDMS from json files (using the conda enviroment with [navsim](https://github.com/autonomousvision/navsim/tree/v1.1))
 ```
 bash inference/vla/run_emu_vla_navsim_metric_others.sh
 ```
@@ -75,3 +82,12 @@ If you find this work useful for your research, please consider citing our paper
   year={2025}
 }
 ```
+
+# Acknowledgements
+We would like to acknowledge the following related works:
+
+[**LAW (ICLR 2025)**](https://github.com/BraveGroup/LAW): Using latent world models for self-supervised feature learning in end-to-end autonomous driving.
+
+[**WoTE (ICCV 2025)**](https://github.com/liyingyanUCAS/WoTE): Using BEV world models for online trajectory evaluation in end-to-end autonomous driving.
+
+[**UniVLA**](https://github.com/baaivision/UniVLA): World modeling in the broader field of robotics.
