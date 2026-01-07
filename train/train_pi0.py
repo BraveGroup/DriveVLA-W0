@@ -19,8 +19,6 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(os.path.join(parent_dir, "reference", "Emu3"))
 from emu3.mllm import Emu3Config, Emu3Tokenizer, Emu3ForCausalLM, Emu3MoE, Emu3MoEConfig, Emu3Pi0, Emu3Pi0Config
 from transformers import AutoModel,Trainer
-from datasets import Emu3WorldModelDataset
-from datasets import Emu3RealRobotDataset
 from datasets import Emu3DrivingDataset
 from datasets import Emu3DrivingVAVADataset
 from torch.utils.data import WeightedRandomSampler, DataLoader
@@ -142,11 +140,7 @@ def get_dataset(data_args, tokenizer):
     """
     Initialize and return the training dataset.
     """
-    if data_args.post_training:
-        return Emu3WorldModelDataset(data_args, tokenizer=tokenizer)
-    elif data_args.real_robot:
-        return Emu3RealRobotDataset(data_args, tokenizer=tokenizer)
-    elif data_args.driving:
+    if data_args.driving:
         return Emu3DrivingVAVADataset(data_args, tokenizer=tokenizer)
     return Emu3SFTDataset(data_args, tokenizer=tokenizer)
 

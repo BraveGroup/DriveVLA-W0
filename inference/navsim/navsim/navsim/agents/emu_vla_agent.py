@@ -18,14 +18,17 @@ class EmuVLAAgent(AbstractAgent):
         self,
         trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5),
         experiment_path: str = '/default/path/to/experiment',
+        anchor_based: bool = False,
     ):
         """
         Initializes the external agent object.
         :param trajectory_sampling: trajectory sampling specification
         :param experiment_path: path to the experiment results
+        :param anchor_based: whether to use anchor-based trajectory (relative action)
         """
         self._trajectory_sampling = trajectory_sampling
         self.experiment_path = experiment_path
+        self.anchor_based = anchor_based
 
     def name(self) -> str:
         """Inherited, see superclass."""
@@ -104,9 +107,11 @@ class EmuVLAAgent(AbstractAgent):
         else:
             raise ValueError(f"Unknown action type: {action_type}. Expected values are None or 'absolute'.")
         
-        # agent_trajectory = Trajectory(abs_action) #pose: np [8, 3]
-        print('anchor based output rel action now')
-        agent_trajectory = Trajectory(rel_action)
+        # 根据 anchor_based 开关选择使用相对动作还是绝对动作
+        if self.anchor_based:
+            agent_trajectory = Trajectory(rel_action)
+        else:
+            agent_trajectory = Trajectory(abs_action)
 
         ################ For visualization ################
         human_trajectory = scene.get_future_trajectory(self._trajectory_sampling.num_poses)

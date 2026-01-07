@@ -1357,30 +1357,18 @@ class Emu3ForCausalLM(Emu3PreTrainedModel):
 
 
 class ActionProjector(nn.Module):
-    def __init__(self, in_channels, dim):
+    def __init__(self, in_channels, dim, action_frames: Optional[int] = None):
         super(ActionProjector, self).__init__()
         # Initialize the linear layers W1, W2, W3
         self.W1 = nn.Linear(in_channels, dim)
         self.W2 = nn.Linear(dim + dim, dim)  # Concatenating 2 encodings (dim + dim)
         self.W3 = nn.Linear(dim, dim)
         self.nonlinearity = nn.SiLU()  # swish
-        
-        # Initialize the weights
-        self._initialize_weights()
 
-    def _initialize_weights(self):
-        # Use Xavier initialization for the linear layer weights
-        nn.init.xavier_uniform_(self.W1.weight)
-        nn.init.xavier_uniform_(self.W2.weight)
-        nn.init.xavier_uniform_(self.W3.weight)
-        
-        # Initialize the biases to zeros
-        if self.W1.bias is not None:
-            nn.init.zeros_(self.W1.bias)
-        if self.W2.bias is not None:
-            nn.init.zeros_(self.W2.bias)
-        if self.W3.bias is not None:
-            nn.init.zeros_(self.W3.bias)
+        self.pos_embed = None
+        if action_frames is not None:
+            self.pos_embed = nn.Embedding(action_frames, dim)
+
 
     def forward(self, x, tau):
         """
@@ -1395,6 +1383,12 @@ class ActionProjector(nn.Module):
         """
         # Apply linear transformation W1 to each element in the sequence (along dim=2)
         out1 = self.W1(x)  # Shape: (batch_size, seq_len, dim)
+
+        if self.pos_embed is not None:
+            seq_len = x.shape[1]
+            position_ids = torch.arange(seq_len, dtype=torch.long, device=x.device)
+            pos_embed = self.pos_embed(position_ids).unsqueeze(0)
+            out1 = out1 + pos_embed
 
         # Concatenate out1 and tau along the last dimension
         out2 = self.W2(torch.cat([out1, tau], dim=-1))  # Shape: (batch_size, seq_len, dim)

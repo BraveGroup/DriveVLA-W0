@@ -7,3 +7,4 @@ trajectory_sampling:
   time_horizon: 4
   interval_length: 0.5
 experiment_path: null
+anchor_based: false

@@ -6,6 +6,7 @@
 # 2. 或者覆盖环境变量后运行：
 #    export EXPERIMENT_PATH="/path/to/your/results"
 #    export EXPERIMENT_NAME="your_experiment_name"
+#    export ANCHOR_BASED="true"  # 或 "false"
 #    bash run_emu_vla_navsim_metric_others.sh
 
 # ============================================================================
@@ -25,6 +26,7 @@ export PYTHON_ENV="${PYTHON_ENV:-/mnt/nvme0n1p1/yingyan.li/miniconda3/envs/navsi
 export EXPERIMENT_PATH="${EXPERIMENT_PATH:-/mnt/vdb1/shuyao.shang/VLA_Emu_Huawei/logs/train_navsim_qformer_anchor_vava/json_output_cursor_clean}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-train_navsim_qformer_anchor_vava/json_output_cursor_clean}"
 export METRIC_CACHE_PATH="${METRIC_CACHE_PATH:-data/navsim/metric_cache/test}"
+export ANCHOR_BASED="${ANCHOR_BASED:-true}"
 
 # ============================================================================
 # 执行评估
@@ -41,6 +43,7 @@ $PYTHON_ENV inference/navsim/navsim/navsim/planning/script/run_pdm_score.py \
   train_test_split=navtest \
   agent=emu_vla_agent \
   agent.experiment_path="$EXPERIMENT_PATH" \
+  agent.anchor_based="$ANCHOR_BASED" \
   experiment_name="$EXPERIMENT_NAME" \
   metric_cache_path="$METRIC_CACHE_PATH"
 
