@@ -104,7 +104,9 @@ class EmuVLAAgent(AbstractAgent):
         else:
             raise ValueError(f"Unknown action type: {action_type}. Expected values are None or 'absolute'.")
         
-        agent_trajectory = Trajectory(abs_action) #pose: np [8, 3]
+        # agent_trajectory = Trajectory(abs_action) #pose: np [8, 3]
+        print('anchor based output rel action now')
+        agent_trajectory = Trajectory(rel_action)
 
         ################ For visualization ################
         human_trajectory = scene.get_future_trajectory(self._trajectory_sampling.num_poses)

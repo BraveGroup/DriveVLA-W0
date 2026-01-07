@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 # project root
-project_root = "/mnt/vdb1/shuyao.shang/VLA_Emu_Huawei"
+project_root = "/mnt/nvme0n1p1/yingyan.li/repo/DriveVLA-W0"
 
 # Add the 'train' directory for importing DataArguments
 train_dir = os.path.join(project_root, 'train')

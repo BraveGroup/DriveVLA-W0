@@ -21,7 +21,7 @@ from transformers.utils import (
 
 
 _import_structure = {
-    "configuration_emu3": ["Emu3Config", "Emu3MoEConfig"],
+    "configuration_emu3": ["Emu3Config", "Emu3MoEConfig", "Emu3Pi0Config"],
     "tokenization_emu3": ["Emu3Tokenizer"],
     "processing_emu3": ["Emu3Processor"],
 }
@@ -37,6 +37,8 @@ else:
         "Emu3PretrainedModel",
         "Emu3ForCausalLM",
         "Emu3MoE",
+        "Emu3QFormer",  # <--- 新增这一行
+        "Emu3Pi0",  # <--- 新增这一行
     ]
 
 if TYPE_CHECKING:

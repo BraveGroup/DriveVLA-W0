@@ -25,11 +25,12 @@ import math
 import warnings
 from typing import List, Optional, Tuple, Union
 
-import torch
+import torch, json
 import torch.nn.functional as F
 import torch.utils.checkpoint
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
+import numpy as np
 
 from transformers.activations import ACT2FN
 from transformers.cache_utils import Cache, DynamicCache
@@ -305,18 +306,23 @@ class Emu3Attention(nn.Module):
         self.attention_dropout = config.attention_dropout
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_attention_heads
-        self.head_dim = self.hidden_size // self.num_heads
+        # self.head_dim = self.hidden_size // self.num_heads
+        if hasattr(config, "head_dim") and config.head_dim is not None:
+            self.head_dim = config.head_dim
+        else:
+            self.head_dim = self.hidden_size // self.num_heads
+
         self.num_key_value_heads = config.num_key_value_heads
         self.num_key_value_groups = self.num_heads // self.num_key_value_heads
         self.max_position_embeddings = config.max_position_embeddings
         self.rope_theta = config.rope_theta
         self.is_causal = True
 
-        if (self.head_dim * self.num_heads) != self.hidden_size:
-            raise ValueError(
-                f"hidden_size must be divisible by num_heads (got `hidden_size`: {self.hidden_size}"
-                f" and `num_heads`: {self.num_heads})."
-            )
+        # if (self.head_dim * self.num_heads) != self.hidden_size:
+        #     raise ValueError(
+        #         f"hidden_size must be divisible by num_heads (got `hidden_size`: {self.hidden_size}"
+        #         f" and `num_heads`: {self.num_heads})."
+        #     )
 
         # modify here
         # self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
@@ -2781,8 +2787,8 @@ class Emu3QFormer(Emu3PreTrainedModel):
         self._action_high = torch.tensor(cfg["norm_stats"]["libero"]["q99"], dtype=torch.float32)
 
         # Anchor classification support
-        self._anchor_cluster_path = "/mnt/vdb1/shuyao.shang/data/navsim_workspace/dataset/cluster_centers_8192.npy"
-        self._anchor_metric_score_path = "/mnt/vdb1/shuyao.shang/data/navsim_workspace/dataset/formatted_pdm_score_8192.npy"
+        self._anchor_cluster_path = "/mnt/vdb1/yingyan.li/emu_vla_logs/cluster_centers_8192.npy"
+        self._anchor_metric_score_path = "/mnt/vdb1/yingyan.li/emu_vla_logs/formatted_pdm_score_8192.npy"
         self._anchor_metric_keys = [
             "no_at_fault_collisions",
             "drivable_area_compliance",
