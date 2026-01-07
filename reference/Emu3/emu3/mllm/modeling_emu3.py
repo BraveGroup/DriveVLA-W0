@@ -26,6 +26,7 @@ import warnings
 from typing import List, Optional, Tuple, Union
 
 import torch, json
+import os
 import torch.nn.functional as F
 import torch.utils.checkpoint
 from torch import nn
@@ -2780,15 +2781,26 @@ class Emu3QFormer(Emu3PreTrainedModel):
         self.train_action_only = getattr(config, 'train_action_only', True)
         self.action_loss_weight = getattr(config, 'action_loss_weight', 1.0)
 
-        # Denorm stats
-        with open("/mnt/vdb1/shuyao.shang/VLA_Emu_Huawei/configs/normalizer_navsim_trainval/norm_stats.json", "r") as f:
+        # Denorm stats - 从环境变量或配置中获取路径
+        norm_stats_path = getattr(config, 'norm_stats_path', None)
+        if norm_stats_path is None:
+            norm_stats_path = os.environ.get('VLA_NORM_STATS', '/mnt/vdb1/shuyao.shang/VLA_Emu_Huawei/configs/normalizer_navsim_trainval/norm_stats.json')
+        
+        with open(norm_stats_path, "r") as f:
             cfg = json.load(f)
         self._action_low = torch.tensor(cfg["norm_stats"]["libero"]["q01"], dtype=torch.float32)
         self._action_high = torch.tensor(cfg["norm_stats"]["libero"]["q99"], dtype=torch.float32)
 
-        # Anchor classification support
-        self._anchor_cluster_path = "/mnt/vdb1/yingyan.li/emu_vla_logs/cluster_centers_8192.npy"
-        self._anchor_metric_score_path = "/mnt/vdb1/yingyan.li/emu_vla_logs/formatted_pdm_score_8192.npy"
+        # Anchor classification support - 从环境变量或配置中获取路径
+        anchor_cluster_path = getattr(config, 'anchor_cluster_path', None)
+        if anchor_cluster_path is None:
+            anchor_cluster_path = os.environ.get('VLA_ANCHOR_CLUSTER_PATH', '/mnt/vdb1/yingyan.li/emu_vla_logs/cluster_centers_8192.npy')
+        self._anchor_cluster_path = anchor_cluster_path
+        
+        anchor_metric_score_path = getattr(config, 'anchor_metric_score_path', None)
+        if anchor_metric_score_path is None:
+            anchor_metric_score_path = os.environ.get('VLA_ANCHOR_METRIC_SCORE_PATH', '/mnt/vdb1/yingyan.li/emu_vla_logs/formatted_pdm_score_8192.npy')
+        self._anchor_metric_score_path = anchor_metric_score_path
         self._anchor_metric_keys = [
             "no_at_fault_collisions",
             "drivable_area_compliance",

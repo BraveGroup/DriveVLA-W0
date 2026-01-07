@@ -12,7 +12,27 @@ from typing import List, Union
 from torch.utils.data import Dataset
 from PIL import Image
 import sys
-sys.path.append("/mnt/nvme0n1p1/yingyan.li/repo/VLA_Emu")
+from pathlib import Path
+
+# 自动检测并添加 VLA_Emu 路径（如果存在）
+# 优先使用环境变量，否则尝试自动检测
+vla_emu_path = os.environ.get('VLA_EMU_PATH', None)
+if vla_emu_path is None:
+    # 尝试从当前文件位置推断（假设在 train/ 目录下）
+    current_file = Path(__file__).resolve()
+    # 查找包含 models/tokenizer/action_tokenizer.py 的目录
+    for parent in current_file.parents:
+        potential_path = parent.parent / "models" / "tokenizer" / "action_tokenizer.py"
+        if potential_path.exists():
+            vla_emu_path = str(parent.parent)
+            break
+    # 如果还是找不到，尝试默认路径（向后兼容）
+    if vla_emu_path is None:
+        vla_emu_path = "/mnt/nvme0n1p1/yingyan.li/repo/VLA_Emu"
+
+if vla_emu_path and os.path.exists(vla_emu_path) and vla_emu_path not in sys.path:
+    sys.path.append(vla_emu_path)
+
 from models.tokenizer.action_tokenizer import ActionTokenizer
 from transformers import AutoModel, AutoImageProcessor, GenerationConfig, AutoProcessor
 from torch.utils.data import Subset
@@ -63,7 +83,10 @@ class Emu3SFTDataset(Dataset):
         self.driving = args.driving if hasattr(args, "driving") else False
 
         if self.raw_image:
-            self.vision_hub = "/mnt/nvme0n1p1/yingyan.li/repo/VLA_Emu/pretrained_models/Emu3-VisionTokenizer"
+            # 从环境变量或参数中获取 vision_hub 路径
+            self.vision_hub = getattr(args, 'vision_hub', None)
+            if self.vision_hub is None:
+                self.vision_hub = os.environ.get('VLA_VISION_HUB', '/mnt/nvme0n1p1/yingyan.li/repo/VLA_Emu/pretrained_models/Emu3-VisionTokenizer')
             self.image_processor = AutoImageProcessor.from_pretrained(self.vision_hub, trust_remote_code=True)
             self.image_tokenizer = AutoModel.from_pretrained(self.vision_hub, trust_remote_code=True)
             self.image_processor.min_pixels = 80 * 80
@@ -603,10 +626,17 @@ class Emu3DrivingVAVADataset(Emu3SFTDataset):
         start_idx = self.cur_idx
         selected_frames = []
 
+        # 路径替换配置 - 从环境变量获取，格式：OLD_PATH:NEW_PATH（多个用分号分隔）
+        path_replacements = os.environ.get('VLA_PATH_REPLACEMENTS', '/mnt/vdb1/yingyan.li/repo/VLA/:/mnt/vdb1/shuyao.shang/VLA_Emu_Huawei/')
+        
         for image_path in img_list[start_idx-2*(num_frames-1):start_idx + 1:2]:  #✅修改
             if do_flip:
                 image_path = image_path.replace("/trainval_vq_codes/", "/trainval_vq_codes_flip/")
-            image_path = image_path.replace("/mnt/vdb1/yingyan.li/repo/VLA/", "/mnt/vdb1/shuyao.shang/VLA_Emu_Huawei/")
+            # 应用路径替换
+            for replacement in path_replacements.split(';'):
+                if ':' in replacement:
+                    old_path, new_path = replacement.split(':', 1)
+                    image_path = image_path.replace(old_path, new_path)
             selected_frames.append(np.load(image_path).reshape(1,18,32))
 
         tensor_frames = [torch.from_numpy(frame) for frame in selected_frames]

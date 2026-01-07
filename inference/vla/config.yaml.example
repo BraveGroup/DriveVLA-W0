@@ -1,0 +1,65 @@
+# VLA 推理配置文件示例
+# 复制此文件为 config.yaml 并根据实际情况修改配置
+# 或者通过环境变量设置配置（环境变量优先级更高）
+
+# 项目根目录（可选，如果不设置会自动检测）
+# project_root: /path/to/DriveVLA-W0
+
+# 路径配置
+paths:
+  # Action tokenizer 路径（必需）
+  # 可以通过环境变量 VLA_ACTION_TOKENIZER 设置
+  action_tokenizer: null  # 例如: /path/to/pretrained_models/fast
+  
+  # VLM 模型路径（用于 tokenizer 配置，必需）
+  # 可以通过环境变量 VLA_VLM_MODEL 设置
+  vlm_model: null  # 例如: /path/to/logs/train_nuplan_6va_v0.2_multi_node
+  
+  # 归一化统计文件路径（必需）
+  # 可以通过环境变量 VLA_NORM_STATS 设置
+  norm_stats: null  # 例如: /path/to/configs/normalizer_navsim_trainval/norm_stats.json
+  
+  # Token YAML 文件路径（可选，有默认值）
+  # 可以通过环境变量 VLA_TOKEN_YAML 设置
+  token_yaml: data/navsim/processed_data/scene_files/scene_filter/navtest.yaml
+
+# 模型配置
+model:
+  # Tokenizer 最大长度
+  model_max_length: 1400
+  
+  # Padding 方向
+  padding_side: right
+  
+  # 是否使用快速 tokenizer
+  use_fast: false
+  
+  # 注意力实现方式
+  attn_implementation: sdpa
+  
+  # 数据类型
+  torch_dtype: bfloat16  # 可选: float32, float16, bfloat16
+
+# 数据配置
+data:
+  # 批次大小
+  batch_size: 1
+  
+  # DataLoader worker 数量
+  num_workers: 12
+  
+  # 是否使用 pin_memory
+  pin_memory: true
+  
+  # 帧数配置
+  frames: 1
+  action_frames: 8
+  action_dim: 3
+  cur_frame_idx: 3
+  pre_action_frames: 3
+
+# 推理配置
+inference:
+  # Pi0 推理步数（仅用于 Pi0 模型）
+  num_inference_steps: 10
+

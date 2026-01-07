@@ -7,23 +7,17 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from transformers import LogitsProcessor
 
-# project root
-project_root = "/sda1/shuyao_shang/VLA_Emu_Huawei"
-
-# Add the 'train' directory for importing DataArguments
-train_dir = os.path.join(project_root, 'train')
-if train_dir not in sys.path:
-    sys.path.insert(0, train_dir)
-
-# Add the 'reference/Emu3' directory for Emu3 models
-emu3_path = os.path.join(project_root, "reference", "Emu3")
-if emu3_path not in sys.path:
-    sys.path.insert(0, emu3_path)
+# 导入配置模块并立即设置路径（必须在导入 emu3 之前）
+from config import setup_paths_early
+setup_paths_early()
 
 from transformers import AutoProcessor
 from emu3.mllm import Emu3Tokenizer, Emu3AutoRegressive, Emu3Pi0Config
 from train_ar import DataArguments  # Import from training script
 from datasets import Emu3DrivingVAVA_AR_Dataset  # Use AR-tailored dataset
+
+# 导入配置获取函数（用于在 main 中获取配置）
+from config import get_config
 
 
 class ActionIDConstraintLogitsProcessor(LogitsProcessor):
@@ -45,10 +39,9 @@ def parse_args():
     parser.add_argument("--emu_hub", required=True, type=str, help="Path to the trained Emu3AutoRegressive model hub.")
     parser.add_argument("--output_dir", required=True, type=str, help="Directory to save inference results.")
     parser.add_argument("--test_data_pkl", required=True, type=str, help="Path to the test data meta pickle file.")
-    parser.add_argument("--token_yaml", type=str,
-                        default="data/navsim/processed_data/scene_files/scene_filter/navtest.yaml"
-                        , help="Path to the token YAML file for naming outputs.")
-    parser.add_argument("--num_workers", type=int, default=12, help="Number of dataloader workers.")
+    parser.add_argument("--token_yaml", type=str, default=None, help="Path to the token YAML file for naming outputs.")
+    parser.add_argument("--num_workers", type=int, default=None, help="Number of dataloader workers.")
+    parser.add_argument("--config", type=str, default=None, help="Path to config YAML file.")
     return parser.parse_args()
 
 
@@ -61,6 +54,10 @@ def setup_distributed():
 
 def main():
     args = parse_args()
+    
+    # 加载配置
+    config = get_config(args.config)
+    
     rank, world_size = setup_distributed()
     device = f"cuda:{rank}"
 
@@ -68,18 +65,22 @@ def main():
     # 1. Create DataArguments to EXACTLY match training configuration
     #    Values are taken from train_navsim_qformer.sh and DataArguments defaults
     # ========================================================================================
+    action_tokenizer_path = config.get_path("paths.action_tokenizer")
+    if action_tokenizer_path is None:
+        raise ValueError("action_tokenizer_path must be set via config file or VLA_ACTION_TOKENIZER environment variable")
+    
     data_args = DataArguments(
         data_path=args.test_data_pkl,
         actions=True,
         driving=True,
         use_previous_actions=True,
         actions_format="fast",
-        action_tokenizer_path="/sda1/shuyao_shang/VLA_Emu_Huawei/pretrained_models/fast",
-        frames=1,
-        action_frames=8,
-        action_dim=3,
-        cur_frame_idx=3,
-        pre_action_frames=3,
+        action_tokenizer_path=action_tokenizer_path,
+        frames=config.get("data.frames", 1),
+        action_frames=config.get("data.action_frames", 8),
+        action_dim=config.get("data.action_dim", 3),
+        cur_frame_idx=config.get("data.cur_frame_idx", 3),
+        pre_action_frames=config.get("data.pre_action_frames", 3),
         video_format=None,  # Inferred from dataset type
         use_flip=False  # No flipping during inference
     )
@@ -88,12 +89,15 @@ def main():
     # 2. Load Tokenizer and Dataset (Identical to training)
     # ========================================================================================
     # This model path is used for tokenizer config, not model weights
-    vlm_model_path_for_tokenizer = "/sda1/shuyao_shang/VLA_Emu_Huawei/logs/train_nuplan_6va_v0.2_multi_node"
+    vlm_model_path_for_tokenizer = config.get_path("paths.vlm_model")
+    if vlm_model_path_for_tokenizer is None:
+        raise ValueError("vlm_model path must be set via config file or VLA_VLM_MODEL environment variable")
+    
     tokenizer = Emu3Tokenizer.from_pretrained(
         vlm_model_path_for_tokenizer,
-        model_max_length=1400,  # From train script
-        padding_side="right",
-        use_fast=False,
+        model_max_length=config.get("model.model_max_length", 1400),
+        padding_side=config.get("model.padding_side", "right"),
+        use_fast=config.get("model.use_fast", False),
     )
 
     # Load action tokenizer for decoding action tokens
@@ -113,12 +117,13 @@ def main():
     # 3. Setup DataLoader with DistributedSampler
     # ========================================================================================
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=False)
+    num_workers = args.num_workers if args.num_workers is not None else config.get("data.num_workers", 12)
     dataloader = DataLoader(
         dataset,
-        batch_size=1,
+        batch_size=config.get("data.batch_size", 1),
         sampler=sampler,
-        num_workers=12,
-        pin_memory=True,
+        num_workers=num_workers,
+        pin_memory=config.get("data.pin_memory", True),
         collate_fn=getattr(dataset, 'collate_fn', None)  # Use dataset's collate if available
     )
 
@@ -126,11 +131,21 @@ def main():
     # 4. Load Model
     # ========================================================================================
     model_config = Emu3Pi0Config.from_pretrained(os.path.join(args.emu_hub, "config.json"))
+    
+    # 获取 torch_dtype
+    torch_dtype_str = config.get("model.torch_dtype", "bfloat16")
+    torch_dtype_map = {
+        "float32": torch.float32,
+        "float16": torch.float16,
+        "bfloat16": torch.bfloat16,
+    }
+    torch_dtype = torch_dtype_map.get(torch_dtype_str, torch.bfloat16)
+    
     model, loading_info = Emu3AutoRegressive.from_pretrained(
         args.emu_hub,
         config=model_config,
         pretrain_vlm_path=vlm_model_path_for_tokenizer,  # Must match tokenizer's
-        torch_dtype=torch.bfloat16,
+        torch_dtype=torch_dtype,
         trust_remote_code=True,
         output_loading_info=True
     )
@@ -144,10 +159,17 @@ def main():
     # ========================================================================================
     # 5. Load external metadata (token names for saving, norm stats)
     # ========================================================================================
-    with open(args.token_yaml, 'r') as f:
+    token_yaml_path = args.token_yaml if args.token_yaml else config.get_path("paths.token_yaml")
+    if token_yaml_path is None:
+        raise ValueError("token_yaml path must be set via config file, command line argument, or VLA_TOKEN_YAML environment variable")
+    
+    with open(token_yaml_path, 'r') as f:
         token_list = yaml.safe_load(f)['tokens']
 
-    norm_stats_path = "/sda1/shuyao_shang/VLA_Emu_Huawei/configs/normalizer_navsim_trainval/norm_stats.json"
+    norm_stats_path = config.get_path("paths.norm_stats")
+    if norm_stats_path is None:
+        raise ValueError("norm_stats path must be set via config file or VLA_NORM_STATS environment variable")
+    
     norm_cfg = json.load(open(norm_stats_path, 'r'))
     action_low = torch.tensor(norm_cfg['norm_stats']['libero']['q01'], device=device)
     action_high = torch.tensor(norm_cfg['norm_stats']['libero']['q99'], device=device)
