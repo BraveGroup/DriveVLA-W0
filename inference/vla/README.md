@@ -8,8 +8,8 @@
 inference/vla/
 ├── config.py                    # 配置管理模块
 ├── config.yaml.example          # 配置文件模板
-├── inference_action_navsim_qformer_vava.py  # QFormer 模型推理脚本
-├── inference_action_navsim_pi0_vava.py     # Pi0 模型推理脚本
+├── inference_action_navsim_query_based_vava.py  # QFormer 模型推理脚本
+├── inference_action_navsim_flow_matching_vava.py     # Pi0 模型推理脚本
 ├── inference_action_navsim_ar_vava.py      # AutoRegressive 模型推理脚本
 ├── infer_navsim_qformer.sh      # QFormer 推理启动脚本
 ├── run_emu_vla_navsim_metric_others.sh     # 指标评估脚本
@@ -41,13 +41,13 @@ export VLA_BATCH_SIZE=1
 
 ```bash
 # QFormer 模型
-torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_qformer_vava.py \
+torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_query_based_vava.py \
     --emu_hub "/path/to/trained/qformer/model" \
     --output_dir "/path/to/output" \
     --test_data_pkl "/path/to/test_data.pkl"
 
 # Pi0 模型
-torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_pi0_vava.py \
+torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_flow_matching_vava.py \
     --emu_hub "/path/to/trained/pi0/model" \
     --output_dir "/path/to/output" \
     --test_data_pkl "/path/to/test_data.pkl"
@@ -80,7 +80,7 @@ paths:
 3. 运行脚本时指定配置文件：
 
 ```bash
-torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_qformer_vava.py \
+torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_query_based_vava.py \
     --config config.yaml \
     --emu_hub "/path/to/trained/model" \
     --output_dir "/path/to/output" \
@@ -182,7 +182,7 @@ export VLA_VLM_MODEL="/data/models/train_nuplan_6va_v0.2_multi_node"
 export VLA_NORM_STATS="/data/configs/normalizer_navsim_trainval/norm_stats.json"
 
 # 运行推理
-torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_qformer_vava.py \
+torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_query_based_vava.py \
     --emu_hub "/data/models/train_navsim_qformer_anchor_vava" \
     --output_dir "/data/output/json_output" \
     --test_data_pkl "/data/navsim/test_data.pkl"
@@ -203,7 +203,7 @@ data:
 EOF
 
 # 运行推理
-torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_qformer_vava.py \
+torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_query_based_vava.py \
     --config config.yaml \
     --emu_hub "/data/models/train_navsim_qformer_anchor_vava" \
     --output_dir "/data/output/json_output" \

@@ -5,13 +5,13 @@ set -euo pipefail
 # Edit the parameter values below as needed.
 
 # GPUs to use
-GPUS=7
+GPUS=8
 
 # Key paths (modify these directly as needed)
-QWEN_HUB=logs/ross_sd15_img_action_qwen25vl_fast_147456_4_000_2va_lr1e-5_unfreezevit
-OUTPUT_DIR=logs/ross_sd15_img_action_qwen25vl_fast_147456_4_000_2va_lr1e-5_unfreezevit/json_output
+QWEN_HUB=/mnt/nvme1n1p1/yingyan.li/logs/qwen25vl_fast_147456_4_000_2va_nuplan_pretrained_8k_2va
+OUTPUT_DIR=/mnt/nvme1n1p1/yingyan.li/logs/qwen25vl_fast_147456_4_000_2va_nuplan_pretrained_8k_2va/json_output_debug
 TEST_PKL=data/navsim/processed_data/meta/navsim_emu_vla_256_144_test_pre_1s.pkl
-ACTION_TOKENIZER=pretrained_models/fast
+ACTION_TOKENIZER=configs/fast
 TOKEN_YAML=data/navsim/processed_data/scene_files/scene_filter/navtest.yaml
 NORM_STATS=configs/normalizer_navsim_trainval/norm_stats.json
 

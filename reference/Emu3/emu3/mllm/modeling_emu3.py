@@ -61,7 +61,6 @@ if is_flash_attn_2_available():
     from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa
 
 import sys
-sys.path.append("/share/project/yuqi.wang/OmniSim")
 from models.policy_head.noise_schedulers import FlowMatchingScheduler
 
 # This makes `_prepare_4d_causal_attention_mask` a leaf function in the FX graph.
@@ -2748,9 +2747,13 @@ class Emu3QFormer(Emu3PreTrainedModel):
         self.action_frames = getattr(config, 'action_frames', 8)
         self.pre_action_frames = getattr(self.action_config, 'pre_action_frames', 3)
 
+        # Anchor configuration (needed before action_queries initialization)
+        self.anchor = getattr(config, "anchor", os.getenv("VLA_ANCHOR_ENABLED", "false").lower() == "true")
+
         # Learnable queries for the action expert, similar to Q-Former
         # self.action_queries = nn.Parameter(torch.zeros(1, self.action_frames, action_hidden_size))
-        self.action_queries = nn.Parameter(torch.zeros(1, 256, action_hidden_size))
+        action_query_dim = 256 if self.anchor else self.action_frames
+        self.action_queries = nn.Parameter(torch.zeros(1, action_query_dim, action_hidden_size))
         nn.init.normal_(self.action_queries, std=action_hidden_size ** -0.5)
 
         # State projector for pre_action and cmd
@@ -2807,11 +2810,9 @@ class Emu3QFormer(Emu3PreTrainedModel):
         self._anchor_metric_score_dict = None
         self._default_metric_scores = None
         self._anchor_setup_done = False
-        self._anchor_enabled = True
         self.anchor_num_trajs = None
         self.anchor_head = None
         self.register_buffer("anchor_cluster_centers", None, persistent=False)
-        self.anchor = getattr(config, "anchor", True)
         if self.anchor:
             self._ensure_anchor_setup()
 
@@ -2863,13 +2864,19 @@ class Emu3QFormer(Emu3PreTrainedModel):
         )
         self.anchor_cluster_encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
 
-        metric_raw = np.load(self._anchor_metric_score_path, allow_pickle=True).item()
-        processed = {}
-        for key, value in metric_raw.items():
-            traj_scores = value["trajectory_scores"][0]
-            stacked = np.vstack([traj_scores[k] for k in self._anchor_metric_keys]).astype(np.float32)
-            processed[key] = torch.tensor(stacked, dtype=torch.float32)
-        self._anchor_metric_score_dict = processed
+        # Try to load metric scores, but don't fail if file doesn't exist (for inference)
+        try:
+            metric_raw = np.load(self._anchor_metric_score_path, allow_pickle=True).item()
+            processed = {}
+            for key, value in metric_raw.items():
+                traj_scores = value["trajectory_scores"][0]
+                stacked = np.vstack([traj_scores[k] for k in self._anchor_metric_keys]).astype(np.float32)
+                processed[key] = torch.tensor(stacked, dtype=torch.float32)
+            self._anchor_metric_score_dict = processed
+        except (FileNotFoundError, IOError, ValueError) as e:
+            print(f"Warning: Could not load anchor metric scores from {self._anchor_metric_score_path}: {e}")
+            print("Anchor metric scores will be unavailable (this is normal for inference)")
+            self._anchor_metric_score_dict = None
 
         self._anchor_setup_done = True
 
@@ -2904,7 +2911,13 @@ class Emu3QFormer(Emu3PreTrainedModel):
 
     def _gather_metric_scores(self, token, device, dtype):
         if self._anchor_metric_score_dict is None:
-            raise RuntimeError("Anchor metric score dictionary is not loaded.")
+            # Return default metric scores when metric data is not available (e.g., during inference)
+            batch_size = token.shape[0]
+            num_metrics = len(self._anchor_metric_keys)  # Should be 5
+            # Return default scores of 1.0 (perfect scores) for all metrics
+            default_scores = torch.ones(batch_size, num_metrics, dtype=dtype, device=device)
+            return default_scores
+
         tokens_hex = [bytes(row.tolist()).hex() for row in token]
         metric_tensors = []
         for tok in tokens_hex:
@@ -2914,6 +2927,35 @@ class Emu3QFormer(Emu3PreTrainedModel):
             metric_tensors.append(tensor)
         stacked = torch.stack([tensor.to(device=device, dtype=dtype) for tensor in metric_tensors], dim=0)
         return stacked
+    
+    def _relative_to_absolute_se2(self, rel_traj: torch.Tensor) -> torch.Tensor:
+        """
+        Convert relative SE2 trajectories to absolute coordinates per sample.
+        rel_traj: [N, H, 3] with (dx, dy, dyaw) in local frame of previous timestep
+        returns: [N, H, 3] absolute (x, y, yaw) with initial pose (0,0,0)
+        """
+        if rel_traj.numel() == 0:
+            return rel_traj
+        N, H, D = rel_traj.shape
+        assert D == 3, "Expected action_dim=3 for SE2 trajectory"
+        abs_traj = torch.zeros_like(rel_traj)
+        for i in range(N):
+            x = 0.0
+            y = 0.0
+            yaw = 0.0
+            for t in range(H):
+                dx, dy, dyaw = rel_traj[i, t]
+                cos_y = torch.cos(torch.tensor(yaw, dtype=rel_traj.dtype, device=rel_traj.device))
+                sin_y = torch.sin(torch.tensor(yaw, dtype=rel_traj.dtype, device=rel_traj.device))
+                gdx = cos_y * dx - sin_y * dy
+                gdy = sin_y * dx + cos_y * dy
+                x = x + float(gdx)
+                y = y + float(gdy)
+                yaw = float(((yaw + float(dyaw)) + 3.141592653589793) % (2 * 3.141592653589793) - 3.141592653589793)
+                abs_traj[i, t, 0] = x
+                abs_traj[i, t, 1] = y
+                abs_traj[i, t, 2] = yaw
+        return abs_traj    
 
     def _compute_anchor_loss(self, action, token, logits):
         if action is None:
@@ -2927,7 +2969,7 @@ class Emu3QFormer(Emu3PreTrainedModel):
         low = self._action_low.to(device, dtype=dtype)
         high = self._action_high.to(device, dtype=dtype)
         action_tensor = 0.5 * (action_tensor + 1.0) * (high - low) + low
-        abs_action = Emu3AutoRegressive_GRPO._relative_to_absolute_se2(action_tensor)
+        abs_action = self._relative_to_absolute_se2(action_tensor)
 
         metric_scores = self._gather_metric_scores(token, device=device, dtype=working_dtype)
         S_NC, S_DAC, S_EP, S_TTC, S_COMFORT = metric_scores.unbind(dim=1)

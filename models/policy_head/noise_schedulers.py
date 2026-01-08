@@ -39,7 +39,7 @@ class FlowMatchingScheduler:
             # Sample uniformly in [0, s]
             timesteps = self.distribution.sample((num_samples,)) * self.s
 
-        return timesteps
+        return timesteps.squeeze(1)
 
     def add_noise(self, original_samples, noise, timesteps):
         """

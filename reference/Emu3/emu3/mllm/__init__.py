@@ -39,6 +39,7 @@ else:
         "Emu3MoE",
         "Emu3QFormer",  # <--- 新增这一行
         "Emu3Pi0",  # <--- 新增这一行
+        "Emu3AutoRegressive",  # <--- 新增这一行
     ]
 
 if TYPE_CHECKING:
@@ -57,6 +58,7 @@ if TYPE_CHECKING:
             Emu3PretrainedModel,
             Emu3ForCausalLM,
             Emu3MoE,
+            Emu3AutoRegressive,
         )
 
 else:

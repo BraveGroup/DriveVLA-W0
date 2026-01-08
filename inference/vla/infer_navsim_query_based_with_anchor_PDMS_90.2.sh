@@ -33,6 +33,9 @@ export TEST_DATA_PKL="${TEST_DATA_PKL:-/mnt/nvme0n1p1/yingyan.li/repo/VLA_Emu_Hu
 export VLA_NUM_WORKERS="${VLA_NUM_WORKERS:-12}"
 export VLA_BATCH_SIZE="${VLA_BATCH_SIZE:-1}"
 
+# Anchor 启用控制（默认关闭，只有设置为true时才启用）
+export VLA_ANCHOR_ENABLED="${VLA_ANCHOR_ENABLED:-true}"
+
 # Anchor 相关路径（用于模型内部，可通过环境变量覆盖）
 export VLA_ANCHOR_CLUSTER_PATH="${VLA_ANCHOR_CLUSTER_PATH:-/mnt/vdb1/yingyan.li/emu_vla_logs/cluster_centers_8192.npy}"
 export VLA_ANCHOR_METRIC_SCORE_PATH="${VLA_ANCHOR_METRIC_SCORE_PATH:-/mnt/vdb1/yingyan.li/emu_vla_logs/formatted_pdm_score_8192.npy}"
@@ -48,7 +51,7 @@ export PYTHONPATH="${DRIVEVLA_ROOT}/inference/navsim/navsim:${DRIVEVLA_ROOT}:${P
 cd "$DRIVEVLA_ROOT"
 
 # 运行推理脚本
-torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_qformer_vava.py \
+torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_query_based_vava.py \
     --emu_hub "$EMU_HUB" \
     --output_dir "$OUTPUT_DIR" \
     --test_data_pkl "$TEST_DATA_PKL"

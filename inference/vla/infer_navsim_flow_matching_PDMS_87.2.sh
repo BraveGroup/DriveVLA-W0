@@ -48,7 +48,7 @@ export PYTHONPATH="${DRIVEVLA_ROOT}/inference/navsim/navsim:${DRIVEVLA_ROOT}:${P
 cd "$DRIVEVLA_ROOT"
 
 # 运行推理脚本
-torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_pi0_vava.py \
+torchrun --nproc_per_node=8 inference/vla/inference_action_navsim_flow_matching_vava.py \
     --emu_hub "$EMU_HUB" \
     --output_dir "$OUTPUT_DIR" \
     --test_data_pkl "$TEST_DATA_PKL"
