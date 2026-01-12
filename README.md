@@ -35,14 +35,8 @@ DriveVLA-W0/
 ├── tools/                     # Utility scripts
 │   ├── action_tokenizer/     # Action tokenizer tools
 │   └── pickle_gen/           # Data preprocessing & pickle generation
-├── train/                     # Training code
+├── utils/                     # utils code
 │   ├── datasets.py           # Dataset definitions
-│   ├── train_ar.py           # Autoregressive model training
-│   ├── train_moe.py          # MoE model training
-│   ├── train_pi0.py          # PI0 model training
-│   ├── train_qformer.py      # QFormer model training
-│   ├── train_qwen_vla.py     # Qwen-VLA joint training
-│   └── train.py              # Main training script
 └── requirements.txt          # Python dependencies
 ```
 

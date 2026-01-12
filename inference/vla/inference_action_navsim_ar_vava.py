@@ -13,7 +13,7 @@ setup_paths_early()
 
 from transformers import AutoProcessor
 from emu3.mllm import Emu3Tokenizer, Emu3AutoRegressive, Emu3Pi0Config
-from train_ar import DataArguments  # Import from training script
+from utils.train_ar import DataArguments  # Import from training script
 from datasets import Emu3DrivingVAVA_AR_Dataset  # Use AR-tailored dataset
 
 # 导入配置获取函数（用于在 main 中获取配置）

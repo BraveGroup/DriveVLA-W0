@@ -179,7 +179,7 @@ print(f"Number of scenes with no pre_1s_image: {not_exist_file_num}")
 
 # --- Phase 3: 归一化 action_list ---
 sys.path.append("/mnt/nvme0n1p1/yingyan.li/repo/VLA_Emu")
-from train.dataset.normalize_pi0 import RunningStats, save, load
+from utils.dataset.normalize_pi0 import RunningStats, save, load
 normalizer_path = f"/mnt/nvme0n1p1/yingyan.li/repo/VLA_Emu/configs/normalizer_navsim_{split}"
 os.makedirs(normalizer_path, exist_ok=True)
 

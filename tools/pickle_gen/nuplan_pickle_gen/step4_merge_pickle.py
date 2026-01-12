@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 # 添加路径
 sys.path.append("/mnt/vdb1/yingyan.li/repo/OmniSim")
-from train.dataset.normalize_pi0 import RunningStats, save
+from utils.dataset.normalize_pi0 import RunningStats, save
 
 # 配置
 INPUT_FILE = "/mnt/vdb1/yingyan.li/repo/OmniSim/dataprocess/intermediate/video_segments.json"
