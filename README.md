@@ -55,7 +55,7 @@ DriveVLA-W0/
 pip install huggingface_hub
 export HF_ENDPOINT=https://hf-mirror.com
 mkdir pretrained_models
-bash scripts/misc/download.sh
+bash scripts/misc/download_emu3_pretrain.sh
 ```
 
 2. **Set Up Environment**
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 ```
 
 3. **Download Model Weights**
-Download Emu3_Flow_Matching_Action_Expert_PDMS_87.2 and navsim_emu_vla_256_144_test_pre_1s.pkl from Hugging Face.
+Download Emu3_Flow_Matching_Action_Expert_PDMS_87.2 and navsim_emu_vla_256_144_test_pre_1s.pkl from [Hugging Face](https://huggingface.co/liyingyan/DriveVLA-W0).
 
 4. **Run Inference**
 ```bash
@@ -154,11 +154,11 @@ First, download the model checkpoints from [Hugging Face](https://huggingface.co
 
 Then, run the following testing script to produce the output actions (as JSON files):
 ```
-bash inference/vla/infer_navsim_with_previous_action_last_vava.sh
+bash inference/vla/infer_navsim_flow_matching_PDMS_87.2.sh
 ```
 Finally, run the script below to compute the PDMS metrics using the generated JSONs (with the conda environment and a valid [navsim repo](https://github.com/autonomousvision/navsim/tree/v1.1)):
 ```
-bash inference/vla/run_emu_vla_navsim_metric_others.sh
+bash inference/vla/eval_navsim_metric_from_json.sh
 ```
 
 ## ⚙️ Configuration Overview
